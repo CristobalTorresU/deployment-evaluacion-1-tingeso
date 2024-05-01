@@ -1,0 +1,139 @@
+version: "3.8"
+
+services:
+  # Nginx for frontend load balancing
+  nginx-frontend:
+    image: nginx
+    container_name: autofix-nginx-frontend-container
+    restart: always
+    ports:
+      - 8070:8070
+    volumes:
+      - ./nginx-frontend.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - frontend1
+      - frontend2
+      - frontend3
+    networks:
+      - autofix-frontend-network
+
+  # Nginx for backend load balancing
+  nginx-backend:
+    image: nginx
+    container_name: autofix-nginx-backend-container
+    restart: always
+    ports:
+      - 80:80
+    volumes:
+      - ./nginx-backend.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - backend1
+      - backend2
+      - backend3
+    networks:
+      - autofix-backend-network
+
+  postgres:
+    container_name: autofix-postgres-container
+    image: postgres
+    deploy:
+      restart_policy:
+        condition: on-failure
+    volumes:
+      - autofix-postgres-volume:/var/lib/postgresql/data
+    networks:
+      - autofix-backend-network
+    environment:      
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: dbautofix
+    ports:
+      - 5432:5432
+
+  # Frontend services
+  frontend1:
+    container_name: autofix-frontend-container-1
+    image: dilget/autofix-frontend:latest
+    ports:
+      - 3001:3000
+    networks:
+      - autofix-frontend-network
+    deploy:
+      restart_policy:
+        condition: on-failure
+
+  frontend2:
+    container_name: autofix-frontend-container-2
+    image: dilget/autofix-frontend:latest
+    ports:
+      - 3002:3000
+    networks:
+      - autofix-frontend-network
+    deploy:
+      restart_policy:
+        condition: on-failure
+
+  frontend3:
+    container_name: autofix-frontend-container-3
+    image: dilget/autofix-frontend:latest
+    ports:
+      - 3003:3000
+    networks:
+      - autofix-frontend-network
+    deploy:
+      restart_policy:
+        condition: on-failure
+
+  # Backend services
+  backend1:
+    container_name: autofix-backend-container-1
+    image: dilget/autofix-backend:latest
+    ports:
+      - 8091:8090
+    environment:
+      - DB_HOST=autofix-postgres-container
+      - DB_PORT=5432
+      - USER=postgres
+      - PASSWORD=postgres
+    networks:
+      - autofix-backend-network
+    deploy:
+      restart_policy:
+        condition: on-failure
+
+  backend2:
+    container_name: autofix-backend-container-2
+    image: dilget/autofix-backend:latest
+    ports:
+      - 8092:8090
+    environment:
+      - DB_HOST=autofix-postgres-container
+      - DB_PORT=5432
+      - USER=postgres
+      - PASSWORD=postgres
+    networks:
+      - autofix-backend-network
+    deploy:
+      restart_policy:
+        condition: on-failure
+
+  backend3:
+    container_name: autofix-backend-container-3
+    image: dilget/autofix-backend:latest
+    ports:
+      - 8093:8090
+    environment:
+      - DB_HOST=autofix-postgres-container
+      - DB_PORT=5432
+      - USER=postgres
+      - PASSWORD=postgres
+    networks:
+      - autofix-backend-network
+    deploy:
+      restart_policy:
+        condition: on-failure
+
+volumes:
+  autofix-postgres-volume:
+networks:
+  autofix-frontend-network:
+  autofix-backend-network:
